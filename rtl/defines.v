@@ -54,9 +54,7 @@
     `define MOV_OPER2_BIT   1       // bit 1 of instruction
     `define ALU_OPER2_BIT   2       // bit 2 of instruction
     // 2nd OPERAND VALUE
-    `define MOV_OPER2_X 1'b0    // 0=memory
-    `define MOV_OPER2_I 1'b1    // 1=inmediate
-    `define ALU_OPER2_X 1'b0    // 0=memory
-    `define ALU_OPER2_I 1'b1    // 1=inmediate
+    `define OPER2_X 1'b0    // 0=memory
+    `define OPER2_I 1'b1    // 1=inmediate
 
 `endif

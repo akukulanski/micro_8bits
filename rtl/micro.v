@@ -62,8 +62,7 @@ module micro(
     );
 
     ALU #(
-        .DATA_WIDTH     (`RAM_DATA_WIDTH),
-        .ALU_INST_WIDTH (`ROM_DATA_WIDTH)
+        .WIDTH          (`RAM_DATA_WIDTH)
     ) ALU_u (
         .clk            (clk),
         .arst           (rst_sync),
@@ -75,7 +74,7 @@ module micro(
         .Flags          (Flags)
     );
 
-    
+
     `ifdef COCOTB_SIM
     initial begin
         $dumpfile ("waveform.vcd");
@@ -83,6 +82,9 @@ module micro(
       #1;
     end
     `endif
-
+    initial begin
+        $dumpfile ("./waves/microprocessor.vcd");
+        $dumpvars (0,micro);
+    end
 
 endmodule

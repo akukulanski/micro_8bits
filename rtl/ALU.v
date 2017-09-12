@@ -4,17 +4,16 @@
 
 
 module ALU #(
-    parameter   WIDTH       = 8,
-    parameter   N_ADDRESS   = 8
+    parameter   WIDTH       = 8
 )(
-    input                           clk,
-    input                           arst,
-    input   wire                    Exec,
-    input   wire [N_ADDRESS-1:0]    IR,
-    input   wire [WIDTH-1:0]        IBR,
-    input   wire [WIDTH-1:0]        MBR,
-    output  reg [WIDTH-1:0]         AR,      // accumulator register
-    output  reg [3:0]               Flags
+    input                       clk,
+    input                       arst,
+    input   wire                Exec,
+    input   wire [WIDTH-1:0]    IR,
+    input   wire [WIDTH-1:0]    IBR,
+    input   wire [WIDTH-1:0]    MBR,
+    output  reg [WIDTH-1:0]     AR,      // accumulator register
+    output  reg [3:0]           Flags
 
 );
 
@@ -35,9 +34,12 @@ module ALU #(
                         neg,
                         ov_,
                         zero_,
-                        neg_;
+                        neg_,
+                        oper2_bit;
 
-    assign oper2 = ( IR[`ALU_OPER2_BIT] == `ALU_OPER2_X ) ? MBR : IBR ;
+    assign oper2_bit = (IR == `LOAD_X || IR == `LOAD_I) ?   IR[`MOV_OPER2_BIT] :
+                                                            IR[`ALU_OPER2_BIT] ;
+    assign oper2 = ( oper2_bit == `OPER2_X ) ? MBR : IBR ;
 
     assign _add     = AR + oper2;
     assign _addc    = AR + oper2 + Flags[`CARRY];
@@ -164,6 +166,10 @@ module ALU #(
       #1;
     end
     `endif
+    initial begin
+        $dumpfile ("./waves/microprocessor.vcd");
+        $dumpvars (0,ALU);
+    end
 
 endmodule
 /*

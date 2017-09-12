@@ -15,7 +15,7 @@ module Instruction_Cycle #(
     output  wire [INST_ADDR_WIDTH-1:0]  inst_addr,
     input   wire [INST_DATA_WIDTH-1:0]  inst_data,
 
-    input   wire [INST_ADDR_WIDTH-1:0]  mem_addr,
+    output  wire [INST_ADDR_WIDTH-1:0]  mem_addr,
     input   wire [MEM_DATA_WIDTH-1:0]   mem_data_i,
     output  wire [MEM_DATA_WIDTH-1:0]   mem_data_o,
     output  reg                         mem_WE,
@@ -54,6 +54,7 @@ module Instruction_Cycle #(
             MBR_o   <= 0;
             mem_WE  <= 1'b0;
             Exec    <= 1'b0;
+            state   <= ST_FETCH;
         end else begin
             mem_WE  <= 1'b0;
             Exec    <= 1'b0;
@@ -72,17 +73,15 @@ module Instruction_Cycle #(
                 begin
                     IBR     <= inst_data;
                     PC      <= PC + 1;
-
+                    state   <= ST_EXECUTE;
                     if(IR[7:6] == 2'b00) begin
                         // MOV operation
                         if(IR == `STORE_X || IR == `STORE_I) begin
-                            state   <= ST_READ_MEM;
-                        end else if(IR == `LOAD_X) begin
                             state   <= ST_WRITE_MEM;
+                        end else if(IR == `LOAD_X) begin
+                            state   <= ST_READ_MEM;
                         /*end else if(IR == `LOAD_I) begin
                         */
-                        end else begin
-                            state   <= ST_EXECUTE;
                         end
                     end
 
@@ -189,5 +188,9 @@ module Instruction_Cycle #(
       #1;
     end
     `endif
+    initial begin
+        $dumpfile ("./waves/microprocessor.vcd");
+        $dumpvars (0,Instruction_Cycle);
+    end
 
 endmodule
