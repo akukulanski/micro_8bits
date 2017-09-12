@@ -138,45 +138,48 @@ module Instruction_Cycle #(
                     mem_WE  <= 1'b0;
                     state   <= ST_FETCH;
 
-                    case (IR)
+                    if(IR == `LOAD_X || IR[7:2] == 6'b010000 || IR[7:2] == 6'b100000) begin
+                        MBR     <= mem_data_i;
+                    end else begin
+                        case (IR)
+                            /*
+                            `LOAD_X:
+                            begin
+                                MBR     <= mem_data_i;
+                            end*/
 
-                        `LOAD_X:
-                        begin
-                            MBR     <= mem_data_i;
-                        end
+                            `JMP:
+                            begin
+                                PC      <= PC + IBR;
+                            end
 
-                        `JMP:
-                        begin
-                            PC      <= PC + IBR;
-                        end
+                            `JZ:
+                            begin
+                                if(Flags[`ZERO]) PC <= PC + IBR;
+                            end
 
-                        `JZ:
-                        begin
-                            if(Flags[`ZERO]) PC <= PC + IBR;
-                        end
+                            `JC:
+                            begin
+                                if(Flags[`CARRY]) PC <= PC + IBR;
+                            end
 
-                        `JC:
-                        begin
-                            if(Flags[`CARRY]) PC <= PC + IBR;
-                        end
+                            `JN:
+                            begin
+                                if(Flags[`NEG]) PC <= PC + IBR;
+                            end
 
-                        `JN:
-                        begin
-                            if(Flags[`NEG]) PC <= PC + IBR;
-                        end
+                            `JV:
+                            begin
+                                if(Flags[`OV]) PC <= PC + IBR;
+                            end
 
-                        `JV:
-                        begin
-                            if(Flags[`OV]) PC <= PC + IBR;
-                        end
-
-                        default:
-                        begin
-                        end
+                            default:
+                            begin
+                            end
 
 
-                    endcase
-
+                        endcase
+                    end
                 end
 
                 default: begin
