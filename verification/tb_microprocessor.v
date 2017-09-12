@@ -29,10 +29,10 @@
 // Change following definitions in order to change the test to be run
 // -----------------------------------------------------------------------
 // Test names: mult_test/nand_test/xor_test/nor_test/add_test/sub_test
-//`define TEST_NAME     mult_test
-//`define ROM_FILE_PATH "mult_test.dat"
-`define TEST_NAME     add_test
-`define ROM_FILE_PATH "add_test.dat"
+`define TEST_NAME     mult_test
+`define ROM_FILE_PATH "mult_test.dat"
+/*`define TEST_NAME     add_test
+`define ROM_FILE_PATH "add_test.dat"*/
 `define RAM_FILE_PATH "ram_mem.dat"
 // -----------------------------------------------------------------------
 
