@@ -38,11 +38,17 @@
     `define XNOR_I  8'b10000111
 
     // Jump instructions
+    `define JMP     8'b11000000
+    `define JZ      8'b11000001
+    `define JC      8'b11000010
+    `define JN      8'b11000011
+    `define JV      8'b11000100
+    /*
     `define JZ      8'b11000000
     `define JC      8'b11000001
     `define JN      8'b11000010
     `define JV      8'b11000011
-    `define JMP     8'b11000100
+    `define JMP     8'b11000100*/
 
     // ALU FLAGS BITFIELD
     `define CARRY   0

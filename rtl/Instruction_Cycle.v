@@ -52,6 +52,10 @@ module Instruction_Cycle #(
         if(arst) begin
             PC      <= 0;
             MBR_o   <= 0;
+            IR      <= 0;
+            IBR     <= 0;
+            MBR     <= 0;
+            MAR     <= 0;
             mem_WE  <= 1'b0;
             Exec    <= 1'b0;
             state   <= ST_FETCH;
@@ -82,6 +86,11 @@ module Instruction_Cycle #(
                             state   <= ST_READ_MEM;
                         /*end else if(IR == `LOAD_I) begin
                         */
+                        end
+                    end else if( IR[7:6] == 2'b01 || IR[7:6] == 2'b10 ) begin
+                        if( IR[`ALU_OPER2_BIT] == `OPER2_X ) begin
+                            // memory access
+                            state   <= ST_READ_MEM;
                         end
                     end
 
