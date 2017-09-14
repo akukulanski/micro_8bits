@@ -47,6 +47,14 @@ module Instruction_Cycle #(
     assign mem_addr     = MAR;
     assign mem_data_o   = MBR_o;
 
+    // stages: fetch, decode, memory r/w, execute.
+    localparam  STAGE_FETCH     = 0,
+                STAGE_DECODE    = 1,
+                STAGE_MEMORY    = 2,
+                STAGE_EXECUTE   = 3;
+
+    reg stage_ack[3:0];
+    reg stage_ready[3:0];
 
     always @(posedge clk or arst) begin
         if(arst) begin
