@@ -85,7 +85,7 @@ module Instruction_Cycle #(
                         state   <= ST_WRITE_MEM;
                     end else if(
                         (IR == `LOAD_X) ||          // load_x
-                        ( (^IR[7:6]) && ~|IR[5:2] ) // Arithm/Logic
+                        ( ^IR[7:6] && ~|IR[5:2] ) // Arithm/Logic
                         ) begin
                             // read memory operation
                             state   <= ST_READ_MEM;
@@ -173,7 +173,7 @@ module Instruction_Cycle #(
                             if(Flags[`OV]) PC <= PC + IBR;
 
                         default:
-                            if ( (^IR[7:6]) && ~|IR[5:2] ) MBR  <= mem_data_i;  // buffers the memory data
+                            if ( ^IR[7:6] && ~|IR[5:2] ) MBR  <= mem_data_i;  // buffers the memory data
 
                     endcase
                 end
