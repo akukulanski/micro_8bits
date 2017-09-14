@@ -7,18 +7,18 @@ module ALU #(
     parameter   WIDTH       = 8
 )(
     input                       clk,
-    input                       arst,
-    input   wire                Exec,
-    input   wire [WIDTH-1:0]    IR,
-    input   wire [WIDTH-1:0]    IBR,
-    input   wire [WIDTH-1:0]    MBR,
-    output  reg [WIDTH-1:0]     AR,      // accumulator register
-    output  reg [3:0]           Flags
+    input                       arst,   // async reset
+    input   wire                Exec,   // execute operation
+    input   wire [WIDTH-1:0]    IR,     // instruction register
+    input   wire [WIDTH-1:0]    IBR,    // inmediate buffer register
+    input   wire [WIDTH-1:0]    MBR,    // memory buffer register
+    output  reg [WIDTH-1:0]     AR,     // accumulator register
+    output  reg [3:0]           Flags   // operation flags
 
 );
 
-    wire [WIDTH-1:0]    oper2;
-    wire [WIDTH:0]      result,
+    wire [WIDTH-1:0]    oper2;      // 2nd operand (inmediate or memory)
+    wire [WIDTH:0]      result,     // operation result (including preliminary result for carry)
                         _add,
                         _addc,
                         _sub,
@@ -27,32 +27,37 @@ module ALU #(
                         _nand,
                         _xor,
                         _xnor,
-                        _load;
+                        _load,
+                        _unchanged;
     wire                carry,
                         ov,
                         zero,
                         neg,
-                        ov_,
-                        zero_,
-                        neg_,
+                        ov_,        // preliminary result for overflow
+                        zero_,      // preliminary result for zero
+                        neg_,       // preliminary result for neg
                         oper2_bit;
 
+    // the position of the bit that indicates the second operand (inmediate or memory),
+    //  varies with the instruction type (load vs arithmetic/logic)
     assign oper2_bit = (IR == `LOAD_X || IR == `LOAD_I) ?   IR[`MOV_OPER2_BIT] :
                                                             IR[`ALU_OPER2_BIT] ;
+    // oper2 = 2nd operand value
     assign oper2 = ( oper2_bit == `OPER2_X ) ? MBR : IBR ;
 
-    assign _add     = AR + oper2;
-    assign _addc    = AR + oper2 + Flags[`CARRY];
-    assign _sub     = AR - oper2;
-    assign _subc    = AR - oper2 - Flags[`CARRY];
-    assign _nor     = { Flags[`CARRY] , ~(AR | oper2) };
-    assign _nand    = { Flags[`CARRY] , ~(AR & oper2) };
-    assign _xor     = { Flags[`CARRY] , AR ^ oper2 };
-    assign _xnor    = { Flags[`CARRY] , ~(AR ^ oper2) };
-    assign _load    = { Flags[`CARRY] , oper2 };    // should reset carry, ov?
-    //assign _store   = { 1'b0 , oper2 };
-    assign _unchanged = {Flags[`CARRY] , AR };
+    // preliminary result for each operation
+    assign _add     =   AR + oper2;
+    assign _addc    =   AR + oper2 + Flags[`CARRY];
+    assign _sub     =   AR - oper2;
+    assign _subc    =   AR - oper2 - Flags[`CARRY];
+    assign _nor     =   { Flags[`CARRY] , ~(AR | oper2) };
+    assign _nand    =   { Flags[`CARRY] , ~(AR & oper2) };
+    assign _xor     =   { Flags[`CARRY] , AR ^ oper2 };
+    assign _xnor    =   { Flags[`CARRY] , ~(AR ^ oper2) };
+    assign _load    =   { Flags[`CARRY] , oper2 };    // should reset carry, ov?
+    assign _unchanged = {Flags[`CARRY] , AR };  // different operation
 
+    // mux to select the result
     assign result = (IR == `ADD_X)    ? _add :
                     (IR == `SUB_X)    ? _sub :
                     (IR == `ADDC_X)   ? _addc :
@@ -71,16 +76,17 @@ module ALU #(
                     (IR == `XNOR_I)   ? _xnor :
                     (IR == `LOAD_X)   ? _load :
                     (IR == `LOAD_I)   ? _load :
-                  //(IR == `STORE_X)  ? _store :
-                  //(IR == `STORE_I)  ? _store :
-                                          {Flags[`CARRY] , AR }; //
+                                        {Flags[`CARRY] , AR }; // keep CARRY unchanged
+//
+    // preliminary flag values
+    assign ov_ =    ( AR[WIDTH-1] ^ oper2[WIDTH-1] )    ?   1'b0 :
+                    ( result[WIDTH] == AR[WIDTH-1] )    ?   1'b0 :
+                                                            1'b1 ;
+    assign zero_  = ( result[WIDTH-1:0] == {WIDTH{1'b0}} ) ? 1'b1 : 1'b0 ;
+    assign neg_   = result[WIDTH-1];
 
-    assign carry = result[WIDTH];
-
-    assign ov_    = (AR[WIDTH-1] ^ oper2[WIDTH-1] ) ? 1'b0 :
-                    (result[WIDTH] == AR[WIDTH-1])  ? 1'b0 :
-                                                                1'b1 ;
-
+    // muxes for flag values
+    assign carry =  result[WIDTH];
     assign ov =     (IR == `ADD_X)    ? ov_ :
                     (IR == `SUB_X)    ? ov_ :
                     (IR == `ADDC_X)   ? ov_ :
@@ -89,9 +95,7 @@ module ALU #(
                     (IR == `SUB_I)    ? ov_ :
                     (IR == `ADDC_I)   ? ov_ :
                     (IR == `SUBC_I)   ? ov_ :
-                                        Flags[`OV] ;
-
-    assign zero_  = ( result[WIDTH-1:0] == {WIDTH{1'b0}} ) ? 1'b1 : 1'b0 ;
+                                        Flags[`OV] ; // keep OV unchanged
 
     assign zero =   (IR == `ADD_X)    ? zero_ :
                     (IR == `SUB_X)    ? zero_ :
@@ -113,12 +117,7 @@ module ALU #(
                     (IR == `LOAD_X)   ? zero_ : // Should set this flag?
                     (IR == `LOAD_I)   ? zero_ : // Should set this flag?
                     */
-                  //(IR == `STORE_X)  ? Flags[`ZERO] :
-                  //(IR == `STORE_I)  ? Flags[`ZERO] :
-                                        Flags[`ZERO] ;
-        // 255+1 = 0
-
-    assign neg_   = result[WIDTH-1];
+                                        Flags[`ZERO] ; // keep ZERO unchanged
 
     assign neg =    (IR == `ADD_X)    ? neg_ :
                     (IR == `SUB_X)    ? neg_ :

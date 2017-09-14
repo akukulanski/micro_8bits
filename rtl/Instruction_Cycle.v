@@ -35,7 +35,8 @@ module Instruction_Cycle #(
                 ST_DECODE       = 1,
                 ST_READ_MEM     = 2,
                 ST_WRITE_MEM    = 3,
-                ST_EXECUTE      = 4;
+                ST_EXECUTE      = 4,
+                ST_ERROR        = 5;
 
     reg [2:0]                   state;  // current state of FSM
     reg [INST_ADDR_WIDTH-1:0]   PC;     // program counter
@@ -151,43 +152,34 @@ module Instruction_Cycle #(
                     Exec    <= 1'b1;        // tells the ALU to perform the operation
                     state   <= ST_FETCH;    // next state = fetch
 
-                    if(IR == `LOAD_X || IR[7:2] == 6'b010000 || IR[7:2] == 6'b100000) begin
-                        MBR     <= mem_data_i;  // buffers the memory data
-                    end else begin
-                        case (IR)
-                            /*
-                            `LOAD_X:
-                            begin
-                                MBR     <= mem_data_i;
-                            end
-                            */
+                    case (IR)
 
-                            `JMP:
-                                PC  <= PC + IBR;
+                        `LOAD_X:
+                            MBR <= mem_data_i;
 
-                            `JZ:
-                                if(Flags[`ZERO]) PC <= PC + IBR;
+                        `JMP:
+                            PC  <= PC + IBR;
 
-                            `JC:
-                                if(Flags[`CARRY]) PC <= PC + IBR;
+                        `JZ:
+                            if(Flags[`ZERO]) PC <= PC + IBR;
 
-                            `JN:
-                                if(Flags[`NEG]) PC <= PC + IBR;
+                        `JC:
+                            if(Flags[`CARRY]) PC <= PC + IBR;
 
-                            `JV:
-                                if(Flags[`OV]) PC <= PC + IBR;
+                        `JN:
+                            if(Flags[`NEG]) PC <= PC + IBR;
 
-                            default:
-                            begin
-                            end
+                        `JV:
+                            if(Flags[`OV]) PC <= PC + IBR;
 
+                        default:
+                            if ( (^IR[7:6]) && ~|IR[5:2] ) MBR  <= mem_data_i;  // buffers the memory data
 
-                        endcase
-                    end
+                    endcase
                 end
 
                 default: begin
-
+                    state <= ST_ERROR;
                 end
 
             endcase
