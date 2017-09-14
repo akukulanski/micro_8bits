@@ -76,24 +76,26 @@ module Instruction_Cycle #(
                     IBR     <= inst_data;   // buffer operand
                     PC      <= PC + 1;      // increment position
                     state   <= ST_EXECUTE;  // by default, next state = execute.
+
                     // Check if a memory operation is required, to set
                     //  the next state accordingly.
-                    if(IR[7:6] == 2'b00) begin
-                        // MOV operation
-                        if(IR == `STORE_X || IR == `STORE_I) begin
-                            state   <= ST_WRITE_MEM;
-                        end else if(IR == `LOAD_X) begin
-                            state   <= ST_READ_MEM;
-                        // there is no 'else' clause because the default next state
-                        // is already defined (ST_EXECUTE)
-                        end
-                    end else if( IR[7:6] == 2'b01 || IR[7:6] == 2'b10 ) begin
+                    if(IR == `STORE_X || IR == `STORE_I) begin
+                        // write memory operation
+                        state   <= ST_WRITE_MEM;
+                    end else if(IR == `LOAD_X) begin
+                        // read memory operation
+                        state   <= ST_READ_MEM;
+                    end else if ( (^IR[7:6]) && ~|IR[5:2] ) begin
+                        // Operation with the 2nd operand stored in memory
+                        // the 'if' condition matches instructions with the
+                        //  following structure:
+                        //  8'b010000XX  <-- add_x, sub_x, addc_x, subc_x
+                        //  8'b100000XX  <-- nor_x, nand_x, xor_x, xnor_x
                         // Arithmetid or Logic operation
-                        if( IR[`ALU_OPER2_BIT] == `OPER2_X ) begin
-                            // 2nd operand is stored in memory
-                            state   <= ST_READ_MEM;
-                        end
+                        state   <= ST_READ_MEM;
                     end
+                    // there is no 'else' clause because the default next state
+                    // is already defined (ST_EXECUTE)
                 end
 
                 ST_WRITE_MEM:
@@ -127,13 +129,19 @@ module Instruction_Cycle #(
 
                 ST_READ_MEM:
                 begin
+                    MAR     <= IBR;         // set the memory address
                     state   <= ST_EXECUTE;  // the reading lasts one clock, so next
                                             //  state is always execute
+
+                    // The following 'if' statement is ommited because it is assumed that in
+                    //  this state is reached ONLY if a memory access is required.
+                    //  Being so, describe accordingly the FSM
+                    /*
                     if(IR == `LOAD_X || IR[7:2] == 6'b010000 || IR[7:2] == 6'b100000) begin
-                        // Instruction that requires a with Memory Operand
+                        // Instruction that requires a Memory Operand
                         MAR     <= IBR;     // set the memory address
                     end
-
+                    */
                 end
 
                 ST_EXECUTE:
