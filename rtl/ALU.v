@@ -175,4 +175,5 @@ endmodule
 consultas:
 - Flags se setean/resetean en c/ instrucción aunq no tenga q ver?
 (ej: instrucción lógica modifica carry?)
+- load setea flags? (zero? neg?)
 */
