@@ -12,40 +12,39 @@ module Instruction_Cycle #(
     input                               clk,
     input                               arst,
 
-    output  wire [INST_ADDR_WIDTH-1:0]  inst_addr,
+    output  wire [INST_ADDR_WIDTH-1:0]  inst_addr,  // assigned from PC (registered)
     input   wire [INST_DATA_WIDTH-1:0]  inst_data,
 
-    output  wire [INST_ADDR_WIDTH-1:0]  mem_addr,
+    output  wire [INST_ADDR_WIDTH-1:0]  mem_addr,   // assigned from MAR (registered)
     input   wire [MEM_DATA_WIDTH-1:0]   mem_data_i,
     output  wire [MEM_DATA_WIDTH-1:0]   mem_data_o,
-    output  reg                         mem_WE,
+    output  reg                         mem_WE,     // write enable
 
-    output  reg                         Exec,
-    input   wire [3:0]                  Flags,
-    input   wire [MEM_DATA_WIDTH-1:0]   AR,
+    output  reg                         Exec,   // flag that tells the ALU to
+                                                //  execute the operation
+    input   wire [3:0]                  Flags,  // flags from the ALU
+    input   wire [MEM_DATA_WIDTH-1:0]   AR,     // accumulator from the alu
     output  reg [INST_DATA_WIDTH-1:0]   IR,     // instruction register
-    output  reg [INST_DATA_WIDTH-1:0]   IBR,    // Inmediate buffer register
+    output  reg [INST_DATA_WIDTH-1:0]   IBR,    // inmediate buffer register
     output  reg [MEM_DATA_WIDTH-1:0]    MBR     // memory buffer register
 
 );
 
+    // states of the FSM
     localparam  ST_FETCH        = 0,
                 ST_DECODE       = 1,
                 ST_READ_MEM     = 2,
                 ST_WRITE_MEM    = 3,
                 ST_EXECUTE      = 4;
 
-    reg [2:0]                   state;
+    reg [2:0]                   state;  // current state of FSM
     reg [INST_ADDR_WIDTH-1:0]   PC;     // program counter
-    //reg [INST_ADDR_WIDTH-1:0]   IAR;    // instruction addr register
-    //reg [INST_DATA_WIDTH-1:0]   IR;     // instruction register
     reg [MEM_ADDR_WIDTH-1:0]    MAR;    // memory addr register
-    reg [MEM_DATA_WIDTH-1:0]    MBR_o;    // memory buffer register
+    reg [MEM_DATA_WIDTH-1:0]    MBR_o;  // memory buffer register (output)
 
     assign inst_addr    = PC;
     assign mem_addr     = MAR;
     assign mem_data_o   = MBR_o;
-
 
 
     always @(posedge clk or arst) begin
@@ -67,56 +66,60 @@ module Instruction_Cycle #(
 
                 ST_FETCH:
                 begin
-                    //inst_addr <= PC;
-                    IR      <= inst_data;
-                    PC      <= PC + 1;
-                    state   <= ST_DECODE;
+                    IR      <= inst_data;   // buffer instruction
+                    PC      <= PC + 1;      // increment position
+                    state   <= ST_DECODE;   // next state = decode
                 end
 
                 ST_DECODE:
                 begin
-                    IBR     <= inst_data;
-                    PC      <= PC + 1;
-                    state   <= ST_EXECUTE;
+                    IBR     <= inst_data;   // buffer operand
+                    PC      <= PC + 1;      // increment position
+                    state   <= ST_EXECUTE;  // by default, next state = execute.
+                    // Check if a memory operation is required, to set
+                    //  the next state accordingly.
                     if(IR[7:6] == 2'b00) begin
                         // MOV operation
                         if(IR == `STORE_X || IR == `STORE_I) begin
                             state   <= ST_WRITE_MEM;
                         end else if(IR == `LOAD_X) begin
                             state   <= ST_READ_MEM;
-                        /*end else if(IR == `LOAD_I) begin
-                        */
+                        // there is no 'else' clause because the default next state
+                        // is already defined (ST_EXECUTE)
                         end
                     end else if( IR[7:6] == 2'b01 || IR[7:6] == 2'b10 ) begin
+                        // Arithmetid or Logic operation
                         if( IR[`ALU_OPER2_BIT] == `OPER2_X ) begin
-                            // memory access
+                            // 2nd operand is stored in memory
                             state   <= ST_READ_MEM;
                         end
                     end
-
-
                 end
 
                 ST_WRITE_MEM:
                 begin
-                    mem_WE  <= 1'b1;
-                    state   <= ST_EXECUTE;
+                    mem_WE  <= 1'b1;        // of course, we are writing memory
+                    state   <= ST_EXECUTE;  // the writing lasts one clock, so next
+                                            //  state is always execute
                     case (IR)
 
                         `STORE_X:
                         begin
-                            MAR     <= IBR; // assign mem_addr = MAR ??
-                            MBR_o   <= AR;
+                            MAR     <= IBR; // memory address = inmediate buffer register
+                            MBR_o   <= AR;  // memory data output = accumulator
                         end
 
                         `STORE_I:
                         begin
-                            MAR     <= AR;
-                            MBR_o   <= IBR;
+                            MAR     <= AR;  // memory address = accumulator
+                            MBR_o   <= IBR; // memory data output = inmediate buffer register
                         end
 
                         default:
                         begin
+                            mem_WE <= 1'b0; // just in case, if the operation is unknown,
+                                            //  won't write anything. Could be ommited to
+                                            //  simplify logic
                         end
 
                     endcase
@@ -124,54 +127,45 @@ module Instruction_Cycle #(
 
                 ST_READ_MEM:
                 begin
-                    state   <= ST_EXECUTE;
+                    state   <= ST_EXECUTE;  // the reading lasts one clock, so next
+                                            //  state is always execute
                     if(IR == `LOAD_X || IR[7:2] == 6'b010000 || IR[7:2] == 6'b100000) begin
                         // Instruction that requires a with Memory Operand
-                        MAR     <= IBR;
+                        MAR     <= IBR;     // set the memory address
                     end
 
                 end
 
                 ST_EXECUTE:
                 begin
-                    Exec    <= 1'b1;
-                    mem_WE  <= 1'b0;
-                    state   <= ST_FETCH;
+                    Exec    <= 1'b1;        // tells the ALU to perform the operation
+                    state   <= ST_FETCH;    // next state = fetch
 
                     if(IR == `LOAD_X || IR[7:2] == 6'b010000 || IR[7:2] == 6'b100000) begin
-                        MBR     <= mem_data_i;
+                        MBR     <= mem_data_i;  // buffers the memory data
                     end else begin
                         case (IR)
                             /*
                             `LOAD_X:
                             begin
                                 MBR     <= mem_data_i;
-                            end*/
+                            end
+                            */
 
                             `JMP:
-                            begin
-                                PC      <= PC + IBR;
-                            end
+                                PC  <= PC + IBR;
 
                             `JZ:
-                            begin
                                 if(Flags[`ZERO]) PC <= PC + IBR;
-                            end
 
                             `JC:
-                            begin
                                 if(Flags[`CARRY]) PC <= PC + IBR;
-                            end
 
                             `JN:
-                            begin
                                 if(Flags[`NEG]) PC <= PC + IBR;
-                            end
 
                             `JV:
-                            begin
                                 if(Flags[`OV]) PC <= PC + IBR;
-                            end
 
                             default:
                             begin
