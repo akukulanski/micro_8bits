@@ -82,17 +82,19 @@ module Instruction_Cycle #(
                     if(IR == `STORE_X || IR == `STORE_I) begin
                         // write memory operation
                         state   <= ST_WRITE_MEM;
-                    end else if(IR == `LOAD_X) begin
-                        // read memory operation
-                        state   <= ST_READ_MEM;
-                    end else if ( (^IR[7:6]) && ~|IR[5:2] ) begin
-                        // Operation with the 2nd operand stored in memory
-                        // the 'if' condition matches instructions with the
-                        //  following structure:
-                        //  8'b010000XX  <-- add_x, sub_x, addc_x, subc_x
-                        //  8'b100000XX  <-- nor_x, nand_x, xor_x, xnor_x
-                        // Arithmetid or Logic operation
-                        state   <= ST_READ_MEM;
+                    end else if(
+                        (IR == `LOAD_X) ||          // load_x
+                        ( (^IR[7:6]) && ~|IR[5:2] ) // Arithm/Logic
+                        ) begin
+                            // read memory operation
+                            state   <= ST_READ_MEM;
+                            // The instructions defined so far requiring memory
+                            //  access are LOAD_X, and the arithmetic or logic
+                            //  operations with the 2nd operand stored in memory.
+                            //  The last ones match the following structure:
+                            //  8'b010000XX  <-- add_x, sub_x, addc_x, subc_x
+                            //  8'b100000XX  <-- nor_x, nand_x, xor_x, xnor_x
+                            //  That condition is represented this way: (^IR[7:6]) && ~|IR[5:2]
                     end
                     // there is no 'else' clause because the default next state
                     // is already defined (ST_EXECUTE)
