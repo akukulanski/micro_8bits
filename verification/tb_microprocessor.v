@@ -25,14 +25,21 @@
 
 `timescale 1ns/1ps
 
+`define WAIT 4   // valor corregido pipeline
+
 // -----------------------------------------------------------------------
 // Change following definitions in order to change the test to be run
 // -----------------------------------------------------------------------
 // Test names: mult_test/nand_test/xor_test/nor_test/add_test/sub_test
+
 `define TEST_NAME     mult_test
 `define ROM_FILE_PATH "mult_test.dat"
-/*`define TEST_NAME     add_test
-`define ROM_FILE_PATH "add_test.dat"*/
+
+/*
+`define TEST_NAME     add_test
+`define ROM_FILE_PATH "add_test.dat"
+*/
+
 `define RAM_FILE_PATH "ram_mem.dat"
 // -----------------------------------------------------------------------
 
@@ -123,8 +130,8 @@ module tb_microprocessor ();
       #10;
       for (i=0;i<256;i=i+1) begin
          for (j=0;j<256;j=j+1) begin
-            wait (tb_rom_addr==8'h87);
-            if (tb_rom_addr==8'h87) begin
+            wait (tb_rom_addr==8'h87+`WAIT);//wait (tb_rom_addr==8'h87);
+            if (tb_rom_addr==8'h87+`WAIT) begin //if (tb_rom_addr==8'h87) begin
                gld_ref = (i*j);
                duv_val = {ram.matrix[3],ram.matrix[2]};
                if (gld_ref!=duv_val) begin
@@ -140,7 +147,7 @@ module tb_microprocessor ();
                $display ("");
                #50;
             end
-            wait (tb_rom_addr!=8'h87);
+            wait (tb_rom_addr!=8'h87+`WAIT); //wait (tb_rom_addr!=8'h87);
          end
          #20;
       end
@@ -277,6 +284,7 @@ module tb_microprocessor ();
    end
    endtask
 
+
    task add_test;
       reg      [7:0] gld_ref;
       reg      [15:0] duv_val;
@@ -291,8 +299,8 @@ module tb_microprocessor ();
       #10;
       for (i=0;i<256;i=i+1) begin
          for (j=0;j<256;j=j+1) begin
-            wait (tb_rom_addr==8'd8);
-            if (tb_rom_addr==8'd8) begin
+            wait (tb_rom_addr==8'd8+`WAIT);//wait (tb_rom_addr==8'd8);
+            if (tb_rom_addr==8'd8+`WAIT) begin //if (tb_rom_addr==8'd8) begin
                gld_ref = j+i;
                duv_val = ram.matrix[2];
                if (gld_ref!=duv_val) begin
@@ -308,7 +316,7 @@ module tb_microprocessor ();
                $display ("");
                #30;
             end
-            wait (tb_rom_addr!=8'h8);
+            wait (tb_rom_addr!=8'h8+`WAIT); //wait (tb_rom_addr!=8'h8);
          end
          #30;
       end

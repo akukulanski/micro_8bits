@@ -30,7 +30,7 @@ module Instruction_Cycle #(
     output  wire [INST_DATA_WIDTH-1:0]  IR,     // instruction register
     output  wire [INST_DATA_WIDTH-1:0]  IBR,    // inmediate buffer register
     output  reg [MEM_DATA_WIDTH-1:0]    MBR,    // memory buffer register
-    output  wire                        exec    // flag that tells the ALU to
+    output  wire                        Exec    // flag that tells the ALU to
                                                 //  execute the operation
 
 );
@@ -50,7 +50,9 @@ module Instruction_Cycle #(
     assign inst_addr    = PC;
     assign mem_addr     = MAR;
 
-    assign exec         = valid[3]; // revisar!!!!!!!!!!!!!!!!!!
+    assign Exec         = valid[3]; // revisar!!!!!!!!!!!!!!!!!!
+    assign IR           = IR_vector[3];
+    assign IBR          = IR_vector[2];
 
     reg [7:0] i;
 
@@ -193,12 +195,17 @@ module Instruction_Cycle #(
     initial begin
         $dumpfile ("waveform.vcd");
         $dumpvars (0,Instruction_Cycle);
-      #1;
+        #1;
     end
     `endif
+
+    integer lp;
     initial begin
         $dumpfile ("./waves/microprocessor.vcd");
         $dumpvars (0,Instruction_Cycle);
+        for (lp=0; lp < STAGES; lp = lp+1) $dumpvars(0, valid[lp]);
+        for (lp=0; lp < STAGES; lp = lp+1) $dumpvars(0, IR_vector[lp]);
+        //for (lp=0; lp < STAGES; lp = lp+1) $dumpvars(0, valid[lp]);
     end
 
 endmodule
