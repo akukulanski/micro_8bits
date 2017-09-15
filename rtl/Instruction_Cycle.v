@@ -30,16 +30,13 @@ module Instruction_Cycle #(
 
 );
 
-    // states of the FSM
-    localparam  ST_FETCH        = 0,
-                ST_DECODE       = 1,
-                ST_READ_MEM     = 2,
-                ST_WRITE_MEM    = 3,
-                ST_EXECUTE      = 4,
-                ST_ERROR        = 5;
+    localparam STAGES = 6;
 
-    reg [2:0]                   state;  // current state of FSM
-    reg [INST_ADDR_WIDTH-1:0]   PC;     // program counter
+    reg                         valid       [0:STAGES-1];
+    reg                         IR_vector   [0:STAGES-1];
+    reg                         MBR_vector  [0:STAGES-1];
+
+    reg [INST_ADDR_WIDTH-1:0]   PC              ;     // program counter
     reg [MEM_ADDR_WIDTH-1:0]    MAR;    // memory addr register
     reg [MEM_DATA_WIDTH-1:0]    MBR_o;  // memory buffer register (output)
 
@@ -47,14 +44,7 @@ module Instruction_Cycle #(
     assign mem_addr     = MAR;
     assign mem_data_o   = MBR_o;
 
-    // stages: fetch, decode, memory r/w, execute.
-    localparam  STAGE_FETCH     = 0,
-                STAGE_DECODE    = 1,
-                STAGE_MEMORY    = 2,
-                STAGE_EXECUTE   = 3;
-
-    reg stage_ack[3:0];
-    reg stage_ready[3:0];
+    reg [7:0] i;
 
     always @(posedge clk or arst) begin
         if(arst) begin
@@ -66,12 +56,52 @@ module Instruction_Cycle #(
             MAR     <= 0;
             mem_WE  <= 1'b0;
             Exec    <= 1'b0;
-            state   <= ST_FETCH;
+
+            for(i=0;i<STAGES;i=i+1) begin
+                valid[i]        <= 0;
+                /*IR_vector[i]    <= 0;
+                MBR_vector[i]   <= 0;*/
+            end
+
         end else begin
-            mem_WE  <= 1'b0;
-            Exec    <= 1'b0;
-            // if(mem_WE == 1'b0) MBR <= mem_data_i; ---
-            case (state)
+
+            for(i=1;i<STAGES;i=i+1) begin
+                valid[i]        <= valid[i-1];
+                IR_vector[i]    <= IR_vector[i-1];
+                MBR_vector[i]   <= MBR_vector[i-1];
+            end
+
+            valid[0]        <= ~PC[0] ;     // even = instruction, odd = operand
+            IR_vector[0]    <= inst_data;   // instruction fetch
+            PC              <= PC + 1;      // next instruction or operand
+            MBR_vector[0]   <= mem_data_i;  // buffer ram data
+
+
+            if(valid[2]) begin
+                case(IR_vector[2])
+
+                    `LOAD_X:
+                    begin
+                        MAR <= IR[1];   // position of operand
+                    end
+
+                    `STORE_X: //need value of accumulator...
+                    begin
+                    end
+
+
+                endcase
+
+            end
+
+
+
+            if(valid[STAGES]) begin
+                // execute...
+            end
+
+
+
 
                 ST_FETCH:
                 begin
