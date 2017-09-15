@@ -196,9 +196,12 @@ module Instruction_Cycle #(
       #1;
     end
     `endif
+
+    `ifdef WAVEFORM
     initial begin
         $dumpfile ("./waves/microprocessor.vcd");
         $dumpvars (0,Instruction_Cycle);
     end
+    `endif
 
 endmodule
