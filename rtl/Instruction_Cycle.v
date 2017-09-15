@@ -12,21 +12,26 @@ module Instruction_Cycle #(
     input                               clk,
     input                               arst,
 
+    // ROM interface
     output  wire [INST_ADDR_WIDTH-1:0]  inst_addr,  // assigned from PC (registered)
     input   wire [INST_DATA_WIDTH-1:0]  inst_data,
 
+    // RAM interface
     output  wire [INST_ADDR_WIDTH-1:0]  mem_addr,   // assigned from MAR (registered)
     input   wire [MEM_DATA_WIDTH-1:0]   mem_data_i,
     output  reg [MEM_DATA_WIDTH-1:0]    mem_data_o,
     output  reg                         mem_WE,     // write enable
 
-    output  wire                        exec,   // flag that tells the ALU to
-                                                //  execute the operation
+    // From ALU
     input   wire [3:0]                  Flags,  // flags from the ALU
     input   wire [MEM_DATA_WIDTH-1:0]   AR,     // accumulator from the alu
+
+    // To ALU
     output  wire [INST_DATA_WIDTH-1:0]  IR,     // instruction register
     output  wire [INST_DATA_WIDTH-1:0]  IBR,    // inmediate buffer register
-    output  reg [MEM_DATA_WIDTH-1:0]    MBR     // memory buffer register
+    output  reg [MEM_DATA_WIDTH-1:0]    MBR,    // memory buffer register
+    output  wire                        exec    // flag that tells the ALU to
+                                                //  execute the operation
 
 );
 
@@ -45,7 +50,7 @@ module Instruction_Cycle #(
     assign inst_addr    = PC;
     assign mem_addr     = MAR;
 
-    assign exec         = valid[4]; // revisar!!!!!!!!!!!!!!!!!!
+    assign exec         = valid[3]; // revisar!!!!!!!!!!!!!!!!!!
 
     reg [7:0] i;
 
