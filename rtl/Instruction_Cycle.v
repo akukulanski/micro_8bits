@@ -17,50 +17,50 @@ module Instruction_Cycle #(
 
     output  wire [INST_ADDR_WIDTH-1:0]  mem_addr,   // assigned from MAR (registered)
     input   wire [MEM_DATA_WIDTH-1:0]   mem_data_i,
-    output  wire [MEM_DATA_WIDTH-1:0]   mem_data_o,
+    output  reg [MEM_DATA_WIDTH-1:0]    mem_data_o,
     output  reg                         mem_WE,     // write enable
 
-    output  reg                         Exec,   // flag that tells the ALU to
+    output  wire                        exec,   // flag that tells the ALU to
                                                 //  execute the operation
     input   wire [3:0]                  Flags,  // flags from the ALU
     input   wire [MEM_DATA_WIDTH-1:0]   AR,     // accumulator from the alu
-    output  reg [INST_DATA_WIDTH-1:0]   IR,     // instruction register
-    output  reg [INST_DATA_WIDTH-1:0]   IBR,    // inmediate buffer register
+    output  wire [INST_DATA_WIDTH-1:0]  IR,     // instruction register
+    output  wire [INST_DATA_WIDTH-1:0]  IBR,    // inmediate buffer register
     output  reg [MEM_DATA_WIDTH-1:0]    MBR     // memory buffer register
 
 );
 
-    localparam STAGES = 6;
+    localparam STAGES = 7;
+    localparam PC_DELAY = 4;    // to perform a relative jmp from the current Program Counter,
+                                //  pipeline delay should be considered. (the instruction in
+                                //  position X, will be executed when PC=X+2)
 
     reg                         valid       [0:STAGES-1];
-    reg                         IR_vector   [0:STAGES-1];
-    reg                         MBR_vector  [0:STAGES-1];
+    reg [INST_ADDR_WIDTH-1:0]   IR_vector   [0:STAGES-1];
+    //reg [MEM_DATA_WIDTH-1:0]    MBR_vector  [0:STAGES-1];
 
-    reg [INST_ADDR_WIDTH-1:0]   PC              ;     // program counter
+    reg [INST_ADDR_WIDTH-1:0]   PC;     // program counter
     reg [MEM_ADDR_WIDTH-1:0]    MAR;    // memory addr register
-    reg [MEM_DATA_WIDTH-1:0]    MBR_o;  // memory buffer register (output)
 
     assign inst_addr    = PC;
     assign mem_addr     = MAR;
-    assign mem_data_o   = MBR_o;
+
+    assign exec         = valid[4]; // revisar!!!!!!!!!!!!!!!!!!
 
     reg [7:0] i;
 
     always @(posedge clk or arst) begin
         if(arst) begin
-            PC      <= 0;
-            MBR_o   <= 0;
-            IR      <= 0;
-            IBR     <= 0;
-            MBR     <= 0;
-            MAR     <= 0;
-            mem_WE  <= 1'b0;
-            Exec    <= 1'b0;
+            PC          <= 0;
+            mem_data_o  <= 0;
+            MBR         <= 0;
+            MAR         <= 0;
+            mem_WE      <= 1'b0;
 
             for(i=0;i<STAGES;i=i+1) begin
                 valid[i]        <= 0;
-                /*IR_vector[i]    <= 0;
-                MBR_vector[i]   <= 0;*/
+                IR_vector[i]    <= 0;
+                //MBR_vector[i]   <= 0;
             end
 
         end else begin
@@ -68,159 +68,116 @@ module Instruction_Cycle #(
             for(i=1;i<STAGES;i=i+1) begin
                 valid[i]        <= valid[i-1];
                 IR_vector[i]    <= IR_vector[i-1];
-                MBR_vector[i]   <= MBR_vector[i-1];
+                //MBR_vector[i]   <= MBR_vector[i-1];
             end
 
+            // Stage 0 & Stage 1 - Fetch Instruction and Operand (2 bytes)
             valid[0]        <= ~PC[0] ;     // even = instruction, odd = operand
             IR_vector[0]    <= inst_data;   // instruction fetch
             PC              <= PC + 1;      // next instruction or operand
-            MBR_vector[0]   <= mem_data_i;  // buffer ram data
+            //MBR_vector[0]   <= mem_data_i;  // buffer ram data
+            mem_WE          <= 1'b0;
 
+            // Stage 2 - Set RAM Address to Read
+            if(valid[1]) begin
+                if( ( IR_vector[1] == `LOAD_X ) || ( ^IR_vector[1][7:6] && ~|IR_vector[1][5:2] ) ) begin // Arithm/Logic
+                    MAR <= IR_vector[0];   // position of operand
+                end
+            end
 
+            // Stage 3 - Read RAM
             if(valid[2]) begin
-                case(IR_vector[2])
+                if( ( IR_vector[2] == `LOAD_X ) || ( ^IR_vector[2][7:6] && ~|IR_vector[2][5:2] ) ) begin // Arithm/Logic
+                    MBR <= mem_data_i;    //
+                end
+            end
 
-                    `LOAD_X:
+            // Stage 4 - Execute Instruction
+            if(valid[3]) begin
+
+                case (IR_vector[3])
+
+                    `JMP:
                     begin
-                        MAR <= IR[1];   // position of operand
+                        PC  <= PC + IBR + 2 - PC_DELAY;
+                        for(i=0;i<STAGES;i=i+1) begin
+                            valid[i]    <= 0;
+                        end
                     end
 
-                    `STORE_X: //need value of accumulator...
+                    `JZ:
                     begin
+                        if(Flags[`ZERO]) begin
+                            PC <= PC + IBR + 2 - PC_DELAY;
+                            for(i=0;i<STAGES;i=i+1) begin
+                                valid[i]    <= 0;
+                            end
+                        end
                     end
 
+                    `JC:
+                    begin
+                        if(Flags[`CARRY]) begin
+                            PC <= PC + IBR + 2 - PC_DELAY;
+                            for(i=0;i<STAGES;i=i+1) begin
+                                valid[i]    <= 0;
+                            end
+                        end
+                    end
+
+                    `JN:
+                    begin
+                        if(Flags[`NEG]) begin
+                            PC <= PC + IBR + 2 - PC_DELAY;
+                            for(i=0;i<STAGES;i=i+1) begin
+                                valid[i]    <= 0;
+                            end
+                        end
+                    end
+
+                    `JV:
+                    begin
+                        if(Flags[`OV]) begin
+                            PC <= PC + IBR + 2 - PC_DELAY;
+                            for(i=0;i<STAGES;i=i+1) begin
+                                valid[i]    <= 0;
+                            end
+                        end
+                    end
+
+                    default:
+                    begin
+
+                    end
 
                 endcase
 
             end
 
+            // Stage 5 - RAM Write
+            if(valid[4]) begin
+                case(IR_vector[4])
 
+                    `STORE_X:
+                    begin
+                       MAR          <= IR_vector[3]; // memory address = inmediate buffer register
+                       mem_data_o   <= AR;           // memory data output = accumulator
+                       mem_WE       <= 1'b1;
+                    end
 
-            if(valid[STAGES]) begin
-                // execute...
+                    `STORE_I:
+                    begin
+                       MAR          <= AR;           // memory address = accumulator
+                       mem_data_o   <= IR_vector[3]; // memory data output = inmediate buffer register
+                       mem_WE       <= 1'b1;
+                    end
+
+                    default:
+                    begin
+                    end
+
+                endcase
             end
-
-
-
-
-                ST_FETCH:
-                begin
-                    IR      <= inst_data;   // buffer instruction
-                    PC      <= PC + 1;      // increment position
-                    state   <= ST_DECODE;   // next state = decode
-                end
-
-                ST_DECODE:
-                begin
-                    IBR     <= inst_data;   // buffer operand
-                    PC      <= PC + 1;      // increment position
-                    state   <= ST_EXECUTE;  // by default, next state = execute.
-
-                    // Check if a memory operation is required, to set
-                    //  the next state accordingly.
-                    if(IR == `STORE_X || IR == `STORE_I) begin
-                        // write memory operation
-                        state   <= ST_WRITE_MEM;
-                    end else if(
-                        (IR == `LOAD_X) ||          // load_x
-                        ( ^IR[7:6] && ~|IR[5:2] ) // Arithm/Logic
-                        ) begin
-                            // read memory operation
-                            state   <= ST_READ_MEM;
-                            // The instructions defined so far requiring memory
-                            //  access are LOAD_X, and the arithmetic or logic
-                            //  operations with the 2nd operand stored in memory.
-                            //  The last ones match the following structure:
-                            //  8'b010000XX  <-- add_x, sub_x, addc_x, subc_x
-                            //  8'b100000XX  <-- nor_x, nand_x, xor_x, xnor_x
-                            //  That condition is represented this way: (^IR[7:6]) && ~|IR[5:2]
-                    end
-                    // there is no 'else' clause because the default next state
-                    // is already defined (ST_EXECUTE)
-                end
-
-                ST_WRITE_MEM:
-                begin
-                    mem_WE  <= 1'b1;        // of course, we are writing memory
-                    state   <= ST_EXECUTE;  // the writing lasts one clock, so next
-                                            //  state is always execute
-                    case (IR)
-
-                        `STORE_X:
-                        begin
-                            MAR     <= IBR; // memory address = inmediate buffer register
-                            MBR_o   <= AR;  // memory data output = accumulator
-                        end
-
-                        `STORE_I:
-                        begin
-                            MAR     <= AR;  // memory address = accumulator
-                            MBR_o   <= IBR; // memory data output = inmediate buffer register
-                        end
-
-                        default:
-                        begin
-                            mem_WE <= 1'b0; // just in case, if the operation is unknown,
-                                            //  won't write anything. Could be ommited to
-                                            //  simplify logic
-                        end
-
-                    endcase
-                end
-
-                ST_READ_MEM:
-                begin
-                    MAR     <= IBR;         // set the memory address
-                    state   <= ST_EXECUTE;  // the reading lasts one clock, so next
-                                            //  state is always execute
-
-                    // The following 'if' statement is ommited because it is assumed that in
-                    //  this state is reached ONLY if a memory access is required.
-                    //  Being so, describe accordingly the FSM
-                    /*
-                    if(IR == `LOAD_X || IR[7:2] == 6'b010000 || IR[7:2] == 6'b100000) begin
-                        // Instruction that requires a Memory Operand
-                        MAR     <= IBR;     // set the memory address
-                    end
-                    */
-                end
-
-                ST_EXECUTE:
-                begin
-                    Exec    <= 1'b1;        // tells the ALU to perform the operation
-                    state   <= ST_FETCH;    // next state = fetch
-
-                    case (IR)
-
-                        `LOAD_X:
-                            MBR <= mem_data_i;
-
-                        `JMP:
-                            PC  <= PC + IBR;
-
-                        `JZ:
-                            if(Flags[`ZERO]) PC <= PC + IBR;
-
-                        `JC:
-                            if(Flags[`CARRY]) PC <= PC + IBR;
-
-                        `JN:
-                            if(Flags[`NEG]) PC <= PC + IBR;
-
-                        `JV:
-                            if(Flags[`OV]) PC <= PC + IBR;
-
-                        default:
-                            if ( ^IR[7:6] && ~|IR[5:2] ) MBR  <= mem_data_i;  // buffers the memory data
-
-                    endcase
-                end
-
-                default: begin
-                    state <= ST_ERROR;
-                end
-
-            endcase
 
         end
 
