@@ -1,6 +1,5 @@
 *.tar.gz
 *.vcd
 */waves/sim.log
-
-
-
+*/waves/tb_run
+*~
