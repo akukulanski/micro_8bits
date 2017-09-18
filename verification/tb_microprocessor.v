@@ -38,6 +38,21 @@
 /*
 `define TEST_NAME     add_test
 `define ROM_FILE_PATH "add_test.dat"
+*//*
+`define TEST_NAME     nand_test
+`define ROM_FILE_PATH "nand_test.dat"
+*//*
+`define TEST_NAME     nor_test
+`define ROM_FILE_PATH "nor_test.dat"
+*//*
+`define TEST_NAME     sub_test
+`define ROM_FILE_PATH "sub_test.dat"
+*//*
+`define TEST_NAME     xor_test
+`define ROM_FILE_PATH "xor_test.dat"
+*//*
+`define TEST_NAME     xnor_test
+`define ROM_FILE_PATH "xnor_test.dat"
 */
 
 `define RAM_FILE_PATH "ram_mem.dat"
@@ -130,8 +145,11 @@ module tb_microprocessor ();
       #10;
       for (i=0;i<256;i=i+1) begin
          for (j=0;j<256;j=j+1) begin
-            wait (tb_rom_addr==8'h87+`WAIT);//wait (tb_rom_addr==8'h87);
-            if (tb_rom_addr==8'h87+`WAIT) begin //if (tb_rom_addr==8'h87) begin
+            //wait (tb_rom_addr==8'h87+`WAIT);//wait (tb_rom_addr==8'h87);
+            //if (tb_rom_addr==8'h87+`WAIT) begin //if (tb_rom_addr==8'h87) begin
+            wait (tb_rom_addr==8'h87);
+            if (tb_rom_addr==8'h87) begin
+               repeat (`WAIT) @ (posedge tb_clk) ;
                gld_ref = (i*j);
                duv_val = {ram.matrix[3],ram.matrix[2]};
                if (gld_ref!=duv_val) begin
@@ -147,7 +165,8 @@ module tb_microprocessor ();
                $display ("");
                #50;
             end
-            wait (tb_rom_addr!=8'h87+`WAIT); //wait (tb_rom_addr!=8'h87);
+            //wait (tb_rom_addr!=8'h87+`WAIT); //wait (tb_rom_addr!=8'h87);
+            wait (tb_rom_addr!=8'h87);
          end
          #20;
       end
@@ -174,6 +193,7 @@ module tb_microprocessor ();
          for (j=0;j<256;j=j+1) begin
             wait (tb_rom_addr==8'd8);
             if (tb_rom_addr==8'd8) begin
+               repeat (`WAIT) @ (posedge tb_clk) ;
                gld_ref = ~(i&j);
                duv_val = ram.matrix[2];
                if (gld_ref!=duv_val) begin
@@ -216,6 +236,7 @@ module tb_microprocessor ();
          for (j=0;j<256;j=j+1) begin
             wait (tb_rom_addr==8'd8);
             if (tb_rom_addr==8'd8) begin
+               repeat (`WAIT) @ (posedge tb_clk) ;
                gld_ref = ~(i|j);
                duv_val = ram.matrix[2];
                if (gld_ref!=duv_val) begin
@@ -258,6 +279,7 @@ module tb_microprocessor ();
          for (j=0;j<256;j=j+1) begin
             wait (tb_rom_addr==8'd8);
             if (tb_rom_addr==8'd8) begin
+               repeat (`WAIT) @ (posedge tb_clk) ;
                gld_ref = j-i;
                duv_val = ram.matrix[2];
                if (gld_ref!=duv_val) begin
@@ -299,8 +321,9 @@ module tb_microprocessor ();
       #10;
       for (i=0;i<256;i=i+1) begin
          for (j=0;j<256;j=j+1) begin
-            wait (tb_rom_addr==8'd8+`WAIT);//wait (tb_rom_addr==8'd8);
-            if (tb_rom_addr==8'd8+`WAIT) begin //if (tb_rom_addr==8'd8) begin
+            wait (tb_rom_addr==8'd8);
+            if (tb_rom_addr==8'd8) begin
+               repeat (`WAIT) @ (posedge tb_clk) ;
                gld_ref = j+i;
                duv_val = ram.matrix[2];
                if (gld_ref!=duv_val) begin
@@ -316,7 +339,8 @@ module tb_microprocessor ();
                $display ("");
                #30;
             end
-            wait (tb_rom_addr!=8'h8+`WAIT); //wait (tb_rom_addr!=8'h8);
+            //wait (tb_rom_addr!=8'h8+`WAIT); //wait (tb_rom_addr!=8'h8);
+            wait (tb_rom_addr!=8'h8);
          end
          #30;
       end
@@ -343,6 +367,7 @@ module tb_microprocessor ();
          for (j=0;j<256;j=j+1) begin
             wait (tb_rom_addr==8'd8);
             if (tb_rom_addr==8'd8) begin
+               repeat (`WAIT) @ (posedge tb_clk) ;
                gld_ref = j^i;
                duv_val = ram.matrix[2];
                if (gld_ref!=duv_val) begin
@@ -385,6 +410,7 @@ module tb_microprocessor ();
          for (j=0;j<256;j=j+1) begin
             wait (tb_rom_addr==8'd8);
             if (tb_rom_addr==8'd8) begin
+               repeat (`WAIT) @ (posedge tb_clk) ;
                gld_ref = ~(j^i);
                duv_val = ram.matrix[2];
                if (gld_ref!=duv_val) begin

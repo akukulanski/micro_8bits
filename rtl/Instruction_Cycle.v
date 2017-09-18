@@ -35,7 +35,7 @@ module Instruction_Cycle #(
 
 );
 
-    localparam STAGES = 7;
+    localparam STAGES = 5;
     localparam PC_DELAY = 4;    // to perform a relative jmp from the current Program Counter,
                                 //  pipeline delay should be considered. (the instruction in
                                 //  position X, will be executed when PC=X+2)
@@ -107,7 +107,7 @@ module Instruction_Cycle #(
                     `JMP:
                     begin
                         PC  <= PC + IBR + 2 - PC_DELAY;
-                        for(i=0;i<STAGES;i=i+1) begin
+                        for(i=0;i<3;i=i+1) begin
                             valid[i]    <= 0;
                         end
                     end
@@ -116,7 +116,7 @@ module Instruction_Cycle #(
                     begin
                         if(Flags[`ZERO]) begin
                             PC <= PC + IBR + 2 - PC_DELAY;
-                            for(i=0;i<STAGES;i=i+1) begin
+                            for(i=0;i<3;i=i+1) begin
                                 valid[i]    <= 0;
                             end
                         end
@@ -126,7 +126,7 @@ module Instruction_Cycle #(
                     begin
                         if(Flags[`CARRY]) begin
                             PC <= PC + IBR + 2 - PC_DELAY;
-                            for(i=0;i<STAGES;i=i+1) begin
+                            for(i=0;i<3;i=i+1) begin
                                 valid[i]    <= 0;
                             end
                         end
@@ -136,7 +136,7 @@ module Instruction_Cycle #(
                     begin
                         if(Flags[`NEG]) begin
                             PC <= PC + IBR + 2 - PC_DELAY;
-                            for(i=0;i<STAGES;i=i+1) begin
+                            for(i=0;i<3;i=i+1) begin
                                 valid[i]    <= 0;
                             end
                         end
@@ -146,7 +146,7 @@ module Instruction_Cycle #(
                     begin
                         if(Flags[`OV]) begin
                             PC <= PC + IBR + 2 - PC_DELAY;
-                            for(i=0;i<STAGES;i=i+1) begin
+                            for(i=0;i<3;i=i+1) begin
                                 valid[i]    <= 0;
                             end
                         end
