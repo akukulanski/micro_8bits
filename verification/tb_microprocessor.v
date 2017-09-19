@@ -145,11 +145,8 @@ module tb_microprocessor ();
       #10;
       for (i=0;i<256;i=i+1) begin
          for (j=0;j<256;j=j+1) begin
-            //wait (tb_rom_addr==8'h87+`WAIT);//wait (tb_rom_addr==8'h87);
-            //if (tb_rom_addr==8'h87+`WAIT) begin //if (tb_rom_addr==8'h87) begin
-            wait (tb_rom_addr==8'h87);
-            if (tb_rom_addr==8'h87) begin
-               repeat (`WAIT) @ (posedge tb_clk) ;
+            wait (tb_rom_addr==8'h87+`WAIT);//wait (tb_rom_addr==8'h87);
+            if (tb_rom_addr==8'h87+`WAIT) begin //if (tb_rom_addr==8'h87) begin
                gld_ref = (i*j);
                duv_val = {ram.matrix[3],ram.matrix[2]};
                if (gld_ref!=duv_val) begin
@@ -165,8 +162,7 @@ module tb_microprocessor ();
                $display ("");
                #50;
             end
-            //wait (tb_rom_addr!=8'h87+`WAIT); //wait (tb_rom_addr!=8'h87);
-            wait (tb_rom_addr!=8'h87);
+            wait (tb_rom_addr!=8'h87+`WAIT); //wait (tb_rom_addr!=8'h87);
          end
          #20;
       end
@@ -191,9 +187,8 @@ module tb_microprocessor ();
       #10;
       for (i=0;i<256;i=i+1) begin
          for (j=0;j<256;j=j+1) begin
-            wait (tb_rom_addr==8'd8);
-            if (tb_rom_addr==8'd8) begin
-               repeat (`WAIT) @ (posedge tb_clk) ;
+            wait (tb_rom_addr==8'd8+`WAIT);
+            if (tb_rom_addr==8'd8+`WAIT) begin
                gld_ref = ~(i&j);
                duv_val = ram.matrix[2];
                if (gld_ref!=duv_val) begin
@@ -209,7 +204,7 @@ module tb_microprocessor ();
                $display ("");
                #30;
             end
-            wait (tb_rom_addr!=8'h8);
+            wait (tb_rom_addr!=8'h8+`WAIT);
          end
          #30;
       end
@@ -234,9 +229,8 @@ module tb_microprocessor ();
       #10;
       for (i=0;i<256;i=i+1) begin
          for (j=0;j<256;j=j+1) begin
-            wait (tb_rom_addr==8'd8);
-            if (tb_rom_addr==8'd8) begin
-               repeat (`WAIT) @ (posedge tb_clk) ;
+            wait (tb_rom_addr==8'd8+`WAIT);
+            if (tb_rom_addr==8'd8+`WAIT) begin
                gld_ref = ~(i|j);
                duv_val = ram.matrix[2];
                if (gld_ref!=duv_val) begin
@@ -252,7 +246,7 @@ module tb_microprocessor ();
                $display ("");
                #30;
             end
-            wait (tb_rom_addr!=8'h8);
+            wait (tb_rom_addr!=8'h8+`WAIT);
          end
          #30;
       end
@@ -277,9 +271,8 @@ module tb_microprocessor ();
       #10;
       for (i=0;i<256;i=i+1) begin
          for (j=0;j<256;j=j+1) begin
-            wait (tb_rom_addr==8'd8);
-            if (tb_rom_addr==8'd8) begin
-               repeat (`WAIT) @ (posedge tb_clk) ;
+            wait (tb_rom_addr==8'd8+`WAIT);
+            if (tb_rom_addr==8'd8+`WAIT) begin
                gld_ref = j-i;
                duv_val = ram.matrix[2];
                if (gld_ref!=duv_val) begin
@@ -295,7 +288,7 @@ module tb_microprocessor ();
                $display ("");
                #30;
             end
-            wait (tb_rom_addr!=8'h8);
+            wait (tb_rom_addr!=8'h8+`WAIT);
          end
          #30;
       end
@@ -321,9 +314,8 @@ module tb_microprocessor ();
       #10;
       for (i=0;i<256;i=i+1) begin
          for (j=0;j<256;j=j+1) begin
-            wait (tb_rom_addr==8'd8);
-            if (tb_rom_addr==8'd8) begin
-               repeat (`WAIT) @ (posedge tb_clk) ;
+            wait (tb_rom_addr==8'd8+`WAIT);
+            if (tb_rom_addr==8'd8+`WAIT) begin
                gld_ref = j+i;
                duv_val = ram.matrix[2];
                if (gld_ref!=duv_val) begin
@@ -339,8 +331,7 @@ module tb_microprocessor ();
                $display ("");
                #30;
             end
-            //wait (tb_rom_addr!=8'h8+`WAIT); //wait (tb_rom_addr!=8'h8);
-            wait (tb_rom_addr!=8'h8);
+            wait (tb_rom_addr!=8'h8+`WAIT);
          end
          #30;
       end
@@ -365,9 +356,8 @@ module tb_microprocessor ();
       #10;
       for (i=0;i<256;i=i+1) begin
          for (j=0;j<256;j=j+1) begin
-            wait (tb_rom_addr==8'd8);
-            if (tb_rom_addr==8'd8) begin
-               repeat (`WAIT) @ (posedge tb_clk) ;
+            wait (tb_rom_addr==8'd8+`WAIT);
+            if (tb_rom_addr==8'd8+`WAIT) begin
                gld_ref = j^i;
                duv_val = ram.matrix[2];
                if (gld_ref!=duv_val) begin
@@ -383,7 +373,7 @@ module tb_microprocessor ();
                $display ("");
                #30;
             end
-            wait (tb_rom_addr!=8'h8);
+            wait (tb_rom_addr!=8'h8+`WAIT);
          end
          #30;
       end
@@ -408,9 +398,8 @@ module tb_microprocessor ();
       #10;
       for (i=0;i<256;i=i+1) begin
          for (j=0;j<256;j=j+1) begin
-            wait (tb_rom_addr==8'd8);
-            if (tb_rom_addr==8'd8) begin
-               repeat (`WAIT) @ (posedge tb_clk) ;
+            wait (tb_rom_addr==8'd8+`WAIT);
+            if (tb_rom_addr==8'd8+`WAIT) begin
                gld_ref = ~(j^i);
                duv_val = ram.matrix[2];
                if (gld_ref!=duv_val) begin
@@ -426,7 +415,7 @@ module tb_microprocessor ();
                $display ("");
                #30;
             end
-            wait (tb_rom_addr!=8'h8);
+            wait (tb_rom_addr!=8'h8+`WAIT);
          end
          #30;
       end
