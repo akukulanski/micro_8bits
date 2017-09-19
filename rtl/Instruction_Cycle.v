@@ -1,7 +1,32 @@
-
+// -----------------------------------------------------------------------------
+//
+// Copyright (c) 2017 by Ariel Kukulanski
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// -----------------------------------------------------------------------------
+//
+// Author:
+//  Ariel Kukulanski - akukulanski@gmail.com
+//
+// Description:
+//  This is the description of a very basic microprocessor,
+//  and is a project for the course 'Design of Digital Integrated
+//  Circuits', in the UTN (National University of).
+//  It's implemented with a FSM, with the following states:
+//  Fetch, Decode, Read Memory, Write Memory, Execute, <Error>
+//
+//
+// -----------------------------------------------------------------------------
 
 `include "defines.v"
-
 
 module Instruction_Cycle #(
     parameter INST_ADDR_WIDTH   = 8,
