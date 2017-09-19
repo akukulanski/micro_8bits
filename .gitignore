@@ -1,6 +1,8 @@
 *.tar.gz
 *.vcd
 */waves/sim.log
+*/log_*__test.txt
+
 
 
 
