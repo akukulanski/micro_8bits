@@ -61,7 +61,9 @@ module Instruction_Cycle #(
                 ST_READ_MEM     = 2,
                 ST_WRITE_MEM    = 3,
                 ST_EXECUTE      = 4,
-                ST_ERROR        = 5;
+                ST_ERROR        = 5,
+                ST_READ_INST    = 6,
+                ST_RESET        = 7;
 
     reg [2:0]                   state;  // current state of FSM
     reg [INST_ADDR_WIDTH-1:0]   PC;     // program counter
@@ -72,8 +74,10 @@ module Instruction_Cycle #(
     assign mem_addr     = MAR;
     assign mem_data_o   = MBR_o;
 
+    reg [INST_DATA_WIDTH-1:0] inst_data_syn;
 
-    always @(posedge clk or arst) begin
+
+    always @(posedge clk or posedge arst) begin
         if(arst) begin
             PC      <= 0;
             MBR_o   <= 0;
@@ -83,34 +87,43 @@ module Instruction_Cycle #(
             MAR     <= 0;
             mem_WE  <= 1'b0;
             Exec    <= 1'b0;
-            state   <= ST_FETCH;
+            state   <= ST_RESET;
+            inst_data_syn <= 0;
         end else begin
             mem_WE  <= 1'b0;
             Exec    <= 1'b0;
             // if(mem_WE == 1'b0) MBR <= mem_data_i; ---
+            inst_data_syn   <= inst_data;   // ROM registered!
+            MBR             <= mem_data_i;  // RAM registered!
+
             case (state)
+
+                ST_RESET:
+                begin
+                    PC      <= 0;
+                    state   <= ST_FETCH;
+                end
 
                 ST_FETCH:
                 begin
-                    IR      <= inst_data;   // buffer instruction
-                    PC      <= PC + 1;      // increment position
-                    state   <= ST_DECODE;   // next state = decode
+                    PC      <= PC + 1;
+                    state   <= ST_DECODE;
                 end
 
                 ST_DECODE:
                 begin
-                    IBR     <= inst_data;   // buffer operand
+                    IR      <= inst_data_syn;   // buffer instruction
                     PC      <= PC + 1;      // increment position
                     state   <= ST_EXECUTE;  // by default, next state = execute.
 
                     // Check if a memory operation is required, to set
                     //  the next state accordingly.
-                    if(IR == `STORE_X || IR == `STORE_I) begin
+                    if(inst_data_syn == `STORE_X || inst_data_syn == `STORE_I) begin
                         // write memory operation
                         state   <= ST_WRITE_MEM;
                     end else if(
-                        (IR == `LOAD_X) ||          // load_x
-                        ( ^IR[7:6] && ~|IR[5:2] ) // Arithm/Logic
+                        (inst_data_syn == `LOAD_X) ||          // load_x
+                        ( ^inst_data_syn[7:6] && ~|inst_data_syn[5:2] ) // Arithm/Logic
                         ) begin
                             // read memory operation
                             state   <= ST_READ_MEM;
@@ -135,14 +148,14 @@ module Instruction_Cycle #(
 
                         `STORE_X:
                         begin
-                            MAR     <= IBR; // memory address = inmediate buffer register
-                            MBR_o   <= AR;  // memory data output = accumulator
+                            MAR     <= inst_data_syn;   // memory address = inmediate buffer register
+                            MBR_o   <= AR;              // memory data output = accumulator
                         end
 
                         `STORE_I:
                         begin
-                            MAR     <= AR;  // memory address = accumulator
-                            MBR_o   <= IBR; // memory data output = inmediate buffer register
+                            MAR     <= AR;              // memory address = accumulator
+                            MBR_o   <= inst_data_syn;   // memory data output = inmediate buffer register
                         end
 
                         default:
@@ -157,48 +170,57 @@ module Instruction_Cycle #(
 
                 ST_READ_MEM:
                 begin
-                    MAR     <= IBR;         // set the memory address
-                    state   <= ST_EXECUTE;  // the reading lasts one clock, so next
-                                            //  state is always execute
+                    MAR     <= inst_data_syn;   // set the memory address
+                    state   <= ST_EXECUTE;      // the reading lasts one clock, so next
+                                                //  state is always execute
 
-                    // The following 'if' statement is ommited because it is assumed that in
-                    //  this state is reached ONLY if a memory access is required.
-                    //  Being so, describe accordingly the FSM
-                    /*
-                    if(IR == `LOAD_X || IR[7:2] == 6'b010000 || IR[7:2] == 6'b100000) begin
-                        // Instruction that requires a Memory Operand
-                        MAR     <= IBR;     // set the memory address
-                    end
-                    */
                 end
 
                 ST_EXECUTE:
                 begin
                     Exec    <= 1'b1;        // tells the ALU to perform the operation
-                    state   <= ST_FETCH;    // next state = fetch
+                    // Assuming no jmp:
+                    state   <= ST_DECODE;   // unless there is a jmp, the fetch is done here
+                    PC      <= PC + 1;
+                    IBR     <= inst_data_syn;
 
                     case (IR)
 
-                        `LOAD_X:
-                            MBR <= mem_data_i;
+                        /*`LOAD_X:
+                            MBR     <= mem_data_i;*/
 
                         `JMP:
-                            PC  <= PC + IBR;
+                        begin
+                            PC      <= PC + inst_data_syn;
+                            state   <= ST_FETCH;
+                        end
 
                         `JZ:
-                            if(Flags[`ZERO]) PC <= PC + IBR;
+                            if(Flags[`ZERO]) begin
+                                PC <= PC + inst_data_syn;
+                                state   <= ST_FETCH;
+                            end
 
                         `JC:
-                            if(Flags[`CARRY]) PC <= PC + IBR;
+                            if(Flags[`CARRY]) begin
+                                PC <= PC + inst_data_syn;
+                                state   <= ST_FETCH;
+                            end
 
                         `JN:
-                            if(Flags[`NEG]) PC <= PC + IBR;
+                            if(Flags[`NEG]) begin
+                                PC <= PC + inst_data_syn;
+                                state   <= ST_FETCH;
+                            end
 
                         `JV:
-                            if(Flags[`OV]) PC <= PC + IBR;
+                            if(Flags[`OV]) begin
+                                PC <= PC + inst_data_syn;
+                                state   <= ST_FETCH;
+                            end
 
-                        default:
-                            if ( ^IR[7:6] && ~|IR[5:2] ) MBR  <= mem_data_i;  // buffers the memory data
+                        /*default:
+                            if ( ^IR[7:6] && ~|IR[5:2] ) MBR  <= mem_data_i;  // buffers the memory data*/
 
                     endcase
                 end

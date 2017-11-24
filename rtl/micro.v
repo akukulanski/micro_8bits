@@ -56,9 +56,14 @@ module micro(
     // Reset Sync
     assign rst_sync = rst_ii | arst;
 
-    always @(posedge clk) begin
-        rst_i   <= arst;
-        rst_ii  <= rst_i;
+    always @(posedge clk or posedge arst) begin
+        if(arst) begin
+            rst_i <= 1'b1;
+            rst_ii <= 1'b1;
+        end else begin
+            rst_i   <= 1'b0;
+            rst_ii  <= rst_i;
+        end
     end
 
     Instruction_Cycle #(

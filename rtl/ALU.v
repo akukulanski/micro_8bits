@@ -168,7 +168,7 @@ module ALU #(
                   //(IR == `STORE_I)  ? Flags[`ZERO] :
                                         Flags[`ZERO] ;
 
-    always @(posedge clk or arst) begin
+    always @(posedge clk or posedge arst) begin
         if (arst) begin
             AR      <= 0;
             Flags   <= 0;
