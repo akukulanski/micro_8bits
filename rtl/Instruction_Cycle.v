@@ -141,6 +141,8 @@ module Instruction_Cycle #(
                 ST_WRITE_MEM:
                 begin
                     // Here both the instruction and the operand are available
+                    // The instruction is in the instruction register IR
+                    // The operand is in the buffer rom_data_syn
                     mem_WE  <= 1'b1;        // of course, we are writing memory
                     PC      <= PC + 1;      // doing fetch here
                     state   <= ST_DECODE ;  // so, next state is decode.
@@ -179,6 +181,9 @@ module Instruction_Cycle #(
 
                 ST_EXECUTE:
                 begin
+                    // Here both the instruction and the operand are available
+                    // The instruction is in the instruction register IR
+                    // The operand is in the buffer rom_data_syn
                     Exec    <= 1'b1;        // tells the ALU to perform the operation
                     // Assuming no jmp:
                     state   <= ST_DECODE;   // unless there is a jmp, the fetch is done here
