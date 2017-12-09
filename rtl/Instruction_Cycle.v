@@ -57,13 +57,12 @@ module Instruction_Cycle #(
 );
 
     // states of the FSM
-    localparam  ST_FETCH        = 0,
-                ST_DECODE       = 1,
-                ST_READ_MEM     = 2,
+    localparam  ST_RESET        = 0,
+                ST_FETCH        = 1,
+                ST_DECODE       = 2,
                 ST_WRITE_MEM    = 3,
-                ST_EXECUTE      = 4,
-                ST_ERROR        = 5,
-                ST_RESET        = 7;
+                ST_READ_MEM     = 4,
+                ST_EXECUTE      = 5;
 
     reg [2:0]                   state;  // current state of FSM
     reg [INST_ADDR_WIDTH-1:0]   PC;     // program counter
@@ -71,12 +70,9 @@ module Instruction_Cycle #(
     reg [MEM_DATA_WIDTH-1:0]    MBR_o;  // memory buffer register (output)
     reg [INST_DATA_WIDTH-1:0]   rom_data_syn ;
 
-
     assign rom_addr     = PC;
     assign mem_addr     = MAR;
     assign mem_data_o   = MBR_o;
-    //assign IBR          = rom_data_syn ;
-    //assign Exec         = (state == ST_EXECUTE);
 
 
     always @(posedge clk or posedge arst) begin
@@ -94,7 +90,6 @@ module Instruction_Cycle #(
         end else begin
             mem_WE  <= 1'b0;
             Exec    <= 1'b0;
-            // if(mem_WE == 1'b0) MBR <= mem_data_i; ---
             rom_data_syn    <= rom_data ;   // ROM registered!
             MBR             <= mem_data_i;  // RAM registered!
 
@@ -134,7 +129,7 @@ module Instruction_Cycle #(
                     end else if( memReadRequired(rom_data_syn ) ) begin
                         state   <= ST_READ_MEM;
                     end
-                    // there is no 'else' clause because the default next state
+                    // there is no 'else' clause since the default next state
                     // is already defined (ST_EXECUTE)
                 end
 
@@ -146,8 +141,6 @@ module Instruction_Cycle #(
                     mem_WE  <= 1'b1;        // of course, we are writing memory
                     PC      <= PC + 1;      // doing fetch here
                     state   <= ST_DECODE ;  // so, next state is decode.
-                    //state   <= ST_EXECUTE;  // the writing lasts one clock, so next
-                                            //  state is always execute
 
                     case (IR)
 
@@ -232,7 +225,7 @@ module Instruction_Cycle #(
                 end
 
                 default: begin
-                    state <= ST_ERROR;
+                    state <= ST_RESET;
                 end
 
             endcase
