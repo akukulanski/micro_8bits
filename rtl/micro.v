@@ -75,8 +75,8 @@ module micro(
         .clk            (clk),
         .arst           (rst_sync),
 
-        .inst_addr      (rom_addr),
-        .inst_data      (rom_data),
+        .rom_addr       (rom_addr),
+        .rom_data       (rom_data),
 
         .mem_addr       (ram_addr),
         .mem_data_i     (ram_data_rd),
