@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------------
 //
-// Copyright (c) 2017 by Ariel Kukulanski
+// Copyright (c) 2017 by Ariel Kukulanski and Nahuel Carducci
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,15 +13,14 @@
 //
 // -----------------------------------------------------------------------------
 //
-// Author:
-//  Ariel Kukulanski - akukulanski@gmail.com
+// Authors:
+// Ariel Kukulanski - akukulanski@gmail.com
+// Nahuel Carducci - nahuel.cci@gmail.com
 //
 // Description:
 //  This is the description of a very basic microprocessor,
 //  and is a project for the course 'Design of Digital Integrated
-//  Circuits', in the UTN (National University of).
-//  It's implemented with a FSM, with the following states:
-//  Fetch, Decode, Read Memory, Write Memory, Execute, <Error>
+//  Circuits', in the UTN (National University of Technology), Argentina.
 //
 //
 // -----------------------------------------------------------------------------
