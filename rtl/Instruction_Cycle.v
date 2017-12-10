@@ -27,7 +27,7 @@
 
 
 `include "defines.v"
-//`include "myFunction.v"
+
 
 module Instruction_Cycle #(
     parameter INST_ADDR_WIDTH   = 8,
